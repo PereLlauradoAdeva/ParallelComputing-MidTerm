@@ -1,0 +1,27 @@
+# Executables
+*.exe
+*.out
+
+# Object files
+*.o
+*.obj
+
+# VS Code
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/c_cpp_properties.json
+
+# Visual Studio
+.vs/
+*.user
+
+# Build directories
+build/
+bin/
+
+# Archive - exclude all images except sample
+archive/
+!archive/.gitkeep
+!archive/README.md
+!archive/sample/
