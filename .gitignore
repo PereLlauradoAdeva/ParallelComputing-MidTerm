@@ -1,11 +1,21 @@
-# Executables
+# Compiled binaries
 *.exe
 *.out
-
-# Object files
 *.o
 *.obj
 
-# Dataset (too large for git)
-archive/
-!archive/sample/
+# Output images
+output_images/
+
+# Input images (too large for repo)
+input_images/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
