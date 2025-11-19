@@ -5,26 +5,22 @@
 #include <cmath>
 #include <omp.h>
 
-// --- Definiciones para STB_IMAGE ---
+// STB libraries per carregar i guardar imatges
 #define STB_IMAGE_IMPLEMENTATION
 #include "libs/stb_image.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "libs/stb_image_write.h"
 
-// --- Incluir los módulos de procesamiento ---
+// Moduls amb les operacions morfologiques
 #include "sequential.h"
 #include "parallel.h"
 
 namespace fs = std::filesystem;
 
-// --- CONSTANTES Y UTILIDADES ---
-
 const int GRAYSCALE_CHANNELS = 1;
 
-/**
- * @brief Convierte una imagen a escala de grises.
- */
+// Converteix una imatge RGB a escala de grisos
 std::vector<unsigned char> convert_to_grayscale(unsigned char* data, int width, int height, int n_channels) {
     std::vector<unsigned char> grayscale_data;
     grayscale_data.reserve(width * height);
@@ -34,6 +30,7 @@ std::vector<unsigned char> convert_to_grayscale(unsigned char* data, int width, 
             unsigned char r = data[i * n_channels];
             unsigned char g = data[i * n_channels + 1];
             unsigned char b = data[i * n_channels + 2];
+            // Formula estandard de luminositat
             unsigned char gray = static_cast<unsigned char>(std::round(0.299f * r + 0.587f * g + 0.114f * b));
             grayscale_data.push_back(gray);
         } else if (n_channels == 1) {
@@ -44,13 +41,9 @@ std::vector<unsigned char> convert_to_grayscale(unsigned char* data, int width, 
 }
 
 
-// ####################################################################
-// ## LÓGICA PRINCIPAL (MEDICIÓN Y EJECUCIÓN)
-// ####################################################################
-
 int main(int argc, char* argv[]) {
 
-    // --- PARÁMETROS DE CONFIGURACIÓN ---
+    // Configuracio de paths
     const fs::path project_root = "C:\\Users\\Lenovo\\Desktop\\UNIFI\\Parallel\\ProjectMidTermDefinitiu";
     const fs::path input_dir = project_root / "input_images";
     const fs::path output_dir = project_root / "output_images";
@@ -60,42 +53,39 @@ int main(int argc, char* argv[]) {
     int max_images = -1;
     int num_threads = omp_get_max_threads();
 
-    // 1. Lectura de argumentos: <./run_executable> <max_images> <num_threads>
+    // Llegir arguments de linia de comandes
     if (argc > 1) { max_images = std::stoi(argv[1]); }
     if (argc > 2) { num_threads = std::stoi(argv[2]); }
 
-    // 2. Configurar el número de hilos de OpenMP
     omp_set_num_threads(num_threads);
 
-    // --- ENCABEZADO DE INFORME ---
+    // Info inicial
     std::cout << "------------------------------------------" << std::endl;
-    std::cout << "  PREPROCESAMIENTO MORFOLÓGICO (APERTURA)" << std::endl;
+    std::cout << "  OPERACIO MORFOLOGICA: APERTURA" << std::endl;
     std::cout << "------------------------------------------" << std::endl;
-    std::cout << "Operación: Apertura (Erosión + Dilatación)" << std::endl;
-    std::cout << "Kernel Size: " << kernel_size << "x" << kernel_size << std::endl;
-    std::cout << "Hilos (OMP_NUM_THREADS): " << num_threads << std::endl;
-    std::cout << "Imágenes a procesar: " << (max_images == -1 ? "TODAS" : std::to_string(max_images)) << std::endl;
+    std::cout << "Kernel: " << kernel_size << "x" << kernel_size << std::endl;
+    std::cout << "Threads: " << num_threads << std::endl;
+    std::cout << "Imatges: " << (max_images == -1 ? "TOTES" : std::to_string(max_images)) << std::endl;
     std::cout << "------------------------------------------" << std::endl;
 
-
-    // --- CONFIGURACIÓN DE DIRECTORIOS ---
+    // Comprovar directoris
     try {
         if (!fs::exists(output_dir)) { fs::create_directories(output_dir); }
         if (!fs::exists(input_dir)) {
-            std::cerr << "ERROR: El directorio de entrada NO existe: " << input_dir << std::endl;
+            std::cerr << "ERROR: No existeix el directori d'entrada: " << input_dir << std::endl;
             return 1;
         }
     } catch (const fs::filesystem_error& e) {
-        std::cerr << "ERROR de sistema de archivos: " << e.what() << std::endl;
+        std::cerr << "ERROR filesystem: " << e.what() << std::endl;
         return 1;
     }
 
-    // --- BUCLE DE PROCESAMIENTO ---
+    // Variables per mesurar temps
     int images_processed = 0;
-
     double total_time_sequential_s = 0.0;
     double total_time_parallel_s = 0.0;
 
+    // Processar cada imatge del directori
     for (const auto& entry : fs::directory_iterator(input_dir)) {
         if (images_processed == max_images && max_images != -1) {
             break;
@@ -111,62 +101,56 @@ int main(int argc, char* argv[]) {
 
             if (!img_data) continue;
 
-            // Preparación: Conversión a grises
+            // Convertir a grisos
             std::vector<unsigned char> gray_input = convert_to_grayscale(img_data, width, height, n_channels);
             stbi_image_free(img_data);
 
-            std::cout << "\n> Procesando: " << filename << " (" << width << "x" << height << ")" << std::endl;
+            std::cout << "\n> " << filename << " (" << width << "x" << height << ")" << std::endl;
 
-            // --- CÁLCULO SECUENCIAL Y MEDICIÓN ---
+            // Versio sequencial
             std::vector<unsigned char> seq_output;
             double start_seq = omp_get_wtime();
-
             Opening_Sequential(gray_input, seq_output, width, height, kernel_size);
-
             double end_seq = omp_get_wtime();
             double duration_seq_s = end_seq - start_seq;
             total_time_sequential_s += duration_seq_s;
 
-            std::cout << "  [SEQ] Tiempo de Apertura: " << duration_seq_s * 1000.0 << " ms" << std::endl;
+            std::cout << "  [SEQ] " << duration_seq_s * 1000.0 << " ms" << std::endl;
 
-
-            // --- CÁLCULO PARALELO Y MEDICIÓN ---
+            // Versio paral·lela
             std::vector<unsigned char> par_output;
             double start_par = omp_get_wtime();
-
             Opening_Parallel(gray_input, par_output, width, height, kernel_size);
-
             double end_par = omp_get_wtime();
             double duration_par_s = end_par - start_par;
             total_time_parallel_s += duration_par_s;
 
-            std::cout << "  [PAR] Tiempo de Apertura: " << duration_par_s * 1000.0 << " ms" << std::endl;
+            std::cout << "  [PAR] " << duration_par_s * 1000.0 << " ms" << std::endl;
 
-            // Cálculo del Speedup por imagen
+            // Speedup
             double speedup = duration_seq_s / duration_par_s;
-            std::cout << "  [SPU] Speedup (por imagen): " << speedup << std::endl;
+            std::cout << "  [SPU] " << speedup << std::endl;
 
-
-            // --- GUARDAR RESULTADOS ---
-            std::string output_path = (output_dir / ("opened_PAR_" + filename)).string();
+            // Guardar resultat
+            std::string output_path = (output_dir / ("opened_" + filename)).string();
             stbi_write_png(output_path.c_str(), width, height, GRAYSCALE_CHANNELS, par_output.data(), width * GRAYSCALE_CHANNELS);
 
             images_processed++;
         }
     }
 
-    // --- RESUMEN FINAL ---
+    // Resum final
     std::cout << "\n------------------------------------------" << std::endl;
-    std::cout << "          RESUMEN DE RENDIMIENTO          " << std::endl;
+    std::cout << "  RESULTATS" << std::endl;
     std::cout << "------------------------------------------" << std::endl;
-    std::cout << "Total de imágenes procesadas: " << images_processed << std::endl;
+    std::cout << "Imatges processades: " << images_processed << std::endl;
     if (images_processed > 0) {
         double overall_speedup = total_time_sequential_s / total_time_parallel_s;
-        std::cout << "Tiempo total secuencial (computación): " << total_time_sequential_s * 1000.0 << " ms" << std::endl;
-        std::cout << "Tiempo total paralelo (computación):   " << total_time_parallel_s * 1000.0 << " ms" << std::endl;
+        std::cout << "Temps total SEQ: " << total_time_sequential_s * 1000.0 << " ms" << std::endl;
+        std::cout << "Temps total PAR: " << total_time_parallel_s * 1000.0 << " ms" << std::endl;
         std::cout << "SPEEDUP GLOBAL: " << overall_speedup << std::endl;
     }
-    std::cout << "--- FIN ---" << std::endl;
+    std::cout << "------------------------------------------" << std::endl;
 
     return 0;
 }

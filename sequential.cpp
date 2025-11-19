@@ -1,6 +1,6 @@
 #include "sequential.h"
 
-// --- 1. DILATACIÓN SECUENCIAL ---
+// Dilatacio: agafa el maxim valor del kernel
 void Dilate_Sequential(const std::vector<unsigned char>& input,
                        std::vector<unsigned char>& output,
                        const int width, const int height, const int kernel_size) {
@@ -12,11 +12,13 @@ void Dilate_Sequential(const std::vector<unsigned char>& input,
         for (int j = 0; j < width; ++j) {
             unsigned char max_val = 0;
 
+            // Recorrer el kernel
             for (int u = -kernel_radius; u <= kernel_radius; ++u) {
                 for (int v = -kernel_radius; v <= kernel_radius; ++v) {
                     int ni = i + u;
                     int nj = j + v;
 
+                    // Comprovar limits
                     if (ni >= 0 && ni < height && nj >= 0 && nj < width) {
                         unsigned char current_pixel = input[ni * width + nj];
                         if (current_pixel > max_val) {
@@ -30,7 +32,7 @@ void Dilate_Sequential(const std::vector<unsigned char>& input,
     }
 }
 
-// --- 2. EROSIÓN SECUENCIAL ---
+// Erosio: agafa el minim valor del kernel
 void Erode_Sequential(const std::vector<unsigned char>& input,
                       std::vector<unsigned char>& output,
                       const int width, const int height, const int kernel_size) {
@@ -60,17 +62,16 @@ void Erode_Sequential(const std::vector<unsigned char>& input,
     }
 }
 
-// --- 3. APERTURA SECUENCIAL (Erosión + Dilatación) ---
+// Apertura = erosio + dilatacio
 void Opening_Sequential(const std::vector<unsigned char>& input,
                         std::vector<unsigned char>& output,
                         const int width, const int height, const int kernel_size) {
 
-    // Necesitamos una matriz temporal para la salida de la Erosión
-    std::vector<unsigned char> temp_eroded_output;
+    std::vector<unsigned char> temp;
 
-    // 1. Erosión secuencial
-    Erode_Sequential(input, temp_eroded_output, width, height, kernel_size);
+    // Primer erosio
+    Erode_Sequential(input, temp, width, height, kernel_size);
 
-    // 2. Dilatación secuencial
-    Dilate_Sequential(temp_eroded_output, output, width, height, kernel_size);
+    // Despres dilatacio
+    Dilate_Sequential(temp, output, width, height, kernel_size);
 }

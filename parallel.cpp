@@ -1,7 +1,7 @@
 #include "parallel.h"
 #include <omp.h>
 
-// --- 1. DILATACIÓN PARALELA ---
+// Dilatacio paral·lela amb OpenMP
 void Dilate_Parallel(const std::vector<unsigned char>& input,
                      std::vector<unsigned char>& output,
                      const int width, const int height, const int kernel_size) {
@@ -9,11 +9,11 @@ void Dilate_Parallel(const std::vector<unsigned char>& input,
     const int kernel_radius = kernel_size / 2;
     output.resize(width * height);
 
-    // Directiva OpenMP: Paraleliza la iteración sobre los píxeles (Data Parallelism)
+    // Paral·lelitzem els dos bucles externs
     #pragma omp parallel for collapse(2) schedule(static)
     for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
-            unsigned char max_val = 0; // Dilatación: MAX
+            unsigned char max_val = 0;
 
             for (int u = -kernel_radius; u <= kernel_radius; ++u) {
                 for (int v = -kernel_radius; v <= kernel_radius; ++v) {
@@ -28,13 +28,13 @@ void Dilate_Parallel(const std::vector<unsigned char>& input,
                     }
                 }
             }
-            // Cada hilo escribe en una posición única de 'output'. No requiere sincronización.
+            // Cada thread escriu a una posicio diferent, no cal sincronitzar
             output[i * width + j] = max_val;
         }
     }
 }
 
-// --- 2. EROSIÓN PARALELA ---
+// Erosio paral·lela amb OpenMP
 void Erode_Parallel(const std::vector<unsigned char>& input,
                     std::vector<unsigned char>& output,
                     const int width, const int height, const int kernel_size) {
@@ -42,11 +42,10 @@ void Erode_Parallel(const std::vector<unsigned char>& input,
     const int kernel_radius = kernel_size / 2;
     output.resize(width * height);
 
-    // Directiva OpenMP: Paraleliza la iteración sobre los píxeles (Data Parallelism)
     #pragma omp parallel for collapse(2) schedule(static)
     for (int i = 0; i < height; ++i) {
         for (int j = 0; j < width; ++j) {
-            unsigned char min_val = 255; // Erosión: MIN
+            unsigned char min_val = 255;
 
             for (int u = -kernel_radius; u <= kernel_radius; ++u) {
                 for (int v = -kernel_radius; v <= kernel_radius; ++v) {
@@ -66,19 +65,16 @@ void Erode_Parallel(const std::vector<unsigned char>& input,
     }
 }
 
-// --- 3. APERTURA PARALELA (Erosión + Dilatación) ---
+// Apertura = erosio + dilatacio (ambdues paral·leles)
 void Opening_Parallel(const std::vector<unsigned char>& input,
                       std::vector<unsigned char>& output,
                       const int width, const int height, const int kernel_size) {
 
-    // Matriz temporal para la salida de la Erosión
-    // Es crucial que esta matriz se pase a las funciones paralelas.
-    std::vector<unsigned char> temp_eroded_output;
+    std::vector<unsigned char> temp;
 
-    // 1. Erosión Paralela
-    Erode_Parallel(input, temp_eroded_output, width, height, kernel_size);
+    // Primer erosio
+    Erode_Parallel(input, temp, width, height, kernel_size);
 
-    // 2. Dilatación Paralela
-    // Se ejecuta después de que Erode_Parallel haya terminado (sincronización implícita).
-    Dilate_Parallel(temp_eroded_output, output, width, height, kernel_size);
+    // Despres dilatacio (espera implicita a que acabi l'erosio)
+    Dilate_Parallel(temp, output, width, height, kernel_size);
 }
