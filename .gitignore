@@ -1,21 +1,11 @@
-# Compiled binaries
-*.exe
-*.out
-*.o
-*.obj
+# Ignorar directoris de compilació
+build/
+bin/
 
-# Output images
+# Ignorar directoris de dades i resultats
+input_images/
 output_images/
 
-# Input images (too large for repo)
-input_images/
-
-# IDE files
+# Ignorar fitxers de configuració de l'IDE (opcional, però recomanat)
 .vscode/
-.idea/
-*.swp
-*.swo
-
-# OS files
-.DS_Store
-Thumbs.db
+.vs/
