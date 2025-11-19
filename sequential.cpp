@@ -1,6 +1,6 @@
 #include "sequential.h"
 
-// Dilatacio: agafa el maxim valor del kernel
+// Dilation: takes the max value in the kernel
 void Dilate_Sequential(const std::vector<unsigned char>& input,
                        std::vector<unsigned char>& output,
                        const int width, const int height, const int kernel_size) {
@@ -12,13 +12,11 @@ void Dilate_Sequential(const std::vector<unsigned char>& input,
         for (int j = 0; j < width; ++j) {
             unsigned char max_val = 0;
 
-            // Recorrer el kernel
             for (int u = -kernel_radius; u <= kernel_radius; ++u) {
                 for (int v = -kernel_radius; v <= kernel_radius; ++v) {
                     int ni = i + u;
                     int nj = j + v;
 
-                    // Comprovar limits
                     if (ni >= 0 && ni < height && nj >= 0 && nj < width) {
                         unsigned char current_pixel = input[ni * width + nj];
                         if (current_pixel > max_val) {
@@ -32,7 +30,7 @@ void Dilate_Sequential(const std::vector<unsigned char>& input,
     }
 }
 
-// Erosio: agafa el minim valor del kernel
+// Erosion: takes the min value in the kernel
 void Erode_Sequential(const std::vector<unsigned char>& input,
                       std::vector<unsigned char>& output,
                       const int width, const int height, const int kernel_size) {
@@ -62,16 +60,13 @@ void Erode_Sequential(const std::vector<unsigned char>& input,
     }
 }
 
-// Apertura = erosio + dilatacio
+// Opening = erosion followed by dilation
 void Opening_Sequential(const std::vector<unsigned char>& input,
                         std::vector<unsigned char>& output,
                         const int width, const int height, const int kernel_size) {
 
     std::vector<unsigned char> temp;
 
-    // Primer erosio
     Erode_Sequential(input, temp, width, height, kernel_size);
-
-    // Despres dilatacio
     Dilate_Sequential(temp, output, width, height, kernel_size);
 }

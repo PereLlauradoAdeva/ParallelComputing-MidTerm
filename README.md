@@ -1,29 +1,29 @@
 # Parallel Computing - MidTerm Project
 
-Projecte de l'assignatura de Parallel Computing.
+Morphological image processing with OpenMP parallelization.
 
-## Descripció
+## Description
 
-Implementació de l'operació morfològica d'apertura (erosió + dilatació) sobre imatges en escala de grisos. Compara la versió seqüencial amb la paral·lela (OpenMP) i calcula el speedup.
+Implements morphological opening (erosion + dilation) on grayscale images. Compares sequential vs parallel performance.
 
-## Compilar
+## Build
 
 ```bash
 g++ -fopenmp -O2 -std=c++17 main.cpp sequential.cpp parallel.cpp -o main.exe
 ```
 
-O executar `compile.bat`
+Or run `compile.bat`
 
-## Executar
+## Usage
 
 ```bash
-./main.exe [max_imatges] [num_threads]
+./main.exe [max_images] [num_threads]
 ```
 
-## Arxius
+## Files
 
-- `main.cpp` - Programa principal
-- `sequential.cpp/h` - Operacions seqüencials
-- `parallel.cpp/h` - Operacions amb OpenMP
-- `libs/` - Llibreries STB per imatges
-- `compile.bat` - Script de compilació
+- `main.cpp` - Main program
+- `sequential.cpp/h` - Sequential operations
+- `parallel.cpp/h` - OpenMP parallel operations
+- `libs/` - STB image libraries
+- `compile.bat` - Build script
