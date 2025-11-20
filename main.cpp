@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <fstream>
 #include <cmath>
 #include <omp.h>
 
@@ -28,7 +29,6 @@ std::vector<unsigned char> convert_to_grayscale(unsigned char* data, int width, 
             unsigned char r = data[i * n_channels];
             unsigned char g = data[i * n_channels + 1];
             unsigned char b = data[i * n_channels + 2];
-            // standard luminosity formula
             unsigned char gray = static_cast<unsigned char>(std::round(0.299f * r + 0.587f * g + 0.114f * b));
             grayscale_data.push_back(gray);
         } else if (n_channels == 1) {
@@ -46,23 +46,14 @@ int main(int argc, char* argv[]) {
     const fs::path output_dir = project_root / "output_images";
 
     const int kernel_size = 21;
-
     int max_images = -1;
-    int num_threads = omp_get_max_threads();
 
     if (argc > 1) {
         max_images = std::stoi(argv[1]);
     }
-    if (argc > 2) {
-        num_threads = std::stoi(argv[2]);
-    }
 
-    omp_set_num_threads(num_threads);
-
-    std::cout << "\n=== Morphological Opening ===" << std::endl;
-    std::cout << "Kernel: " << kernel_size << "x" << kernel_size << std::endl;
-    std::cout << "Threads: " << num_threads << std::endl;
-    std::cout << "Processing images..." << std::endl;
+    // Thread counts to test
+    std::vector<int> thread_counts = {1, 2, 4, 8, 12, 16};
 
     // make sure output directory exists
     try {
@@ -78,70 +69,97 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    int count = 0;
-    double total_seq_time = 0.0;
-    double total_par_time = 0.0;
+    std::cout << "\n=== Thread Performance Test ===" << std::endl;
+    std::cout << "Kernel: " << kernel_size << "x" << kernel_size << std::endl;
+    std::cout << "Images: " << (max_images == -1 ? "all" : std::to_string(max_images)) << std::endl;
 
-    // process images
+    // Open CSV file for results
+    std::ofstream csv_file("performance_results.csv");
+    csv_file << "Threads,Sequential_Time_ms,Parallel_Time_ms,Speedup,Efficiency" << std::endl;
+
+    // Get sequential baseline first
+    std::cout << "\nCalculating sequential baseline..." << std::endl;
+    double seq_baseline = 0.0;
+    int count = 0;
+
     for (const auto& entry : fs::directory_iterator(input_dir)) {
-        if (max_images != -1 && count >= max_images) {
-            break;
-        }
+        if (max_images != -1 && count >= max_images) break;
 
         if (entry.is_regular_file() &&
             (entry.path().extension() == ".jpg" || entry.path().extension() == ".png")) {
 
             std::string input_path = entry.path().string();
-            std::string filename = entry.path().filename().string();
-
             int width, height, channels;
             unsigned char* image_data = stbi_load(input_path.c_str(), &width, &height, &channels, 0);
-
             if (!image_data) continue;
 
             std::vector<unsigned char> gray_image = convert_to_grayscale(image_data, width, height, channels);
             stbi_image_free(image_data);
 
-            std::cout << "\n" << filename << " (" << width << "x" << height << ")" << std::endl;
-
-            // sequential version
             std::vector<unsigned char> result_seq;
-            double start_seq = omp_get_wtime();
+            double start = omp_get_wtime();
             Opening_Sequential(gray_image, result_seq, width, height, kernel_size);
-            double end_seq = omp_get_wtime();
-            double time_seq = end_seq - start_seq;
-            total_seq_time += time_seq;
-
-            // parallel version
-            std::vector<unsigned char> result_par;
-            double start_par = omp_get_wtime();
-            Opening_Parallel(gray_image, result_par, width, height, kernel_size);
-            double end_par = omp_get_wtime();
-            double time_par = end_par - start_par;
-            total_par_time += time_par;
-
-            double speedup = time_seq / time_par;
-            std::cout << "  Sequential: " << time_seq * 1000.0 << " ms" << std::endl;
-            std::cout << "  Parallel:   " << time_par * 1000.0 << " ms" << std::endl;
-            std::cout << "  Speedup:    " << speedup << "x" << std::endl;
-
-            // save output
-            std::string output_path = (output_dir / ("opened_" + filename)).string();
-            stbi_write_png(output_path.c_str(), width, height, GRAYSCALE_CHANNELS,
-                          result_par.data(), width * GRAYSCALE_CHANNELS);
+            double end = omp_get_wtime();
+            seq_baseline += (end - start);
 
             count++;
         }
     }
 
-    // print summary
-    std::cout << "\n=== Summary ===" << std::endl;
-    std::cout << "Total images processed: " << count << std::endl;
-    if (count > 0) {
-        std::cout << "Total sequential time: " << total_seq_time * 1000.0 << " ms" << std::endl;
-        std::cout << "Total parallel time:   " << total_par_time * 1000.0 << " ms" << std::endl;
-        std::cout << "Overall speedup:       " << total_seq_time / total_par_time << "x" << std::endl;
+    std::cout << "Sequential baseline: " << seq_baseline * 1000.0 << " ms (" << count << " images)" << std::endl;
+
+    // Test each thread count
+    for (int num_threads : thread_counts) {
+        omp_set_num_threads(num_threads);
+
+        std::cout << "\nTesting with " << num_threads << " thread(s)..." << std::endl;
+
+        double total_par_time = 0.0;
+        int img_count = 0;
+
+        for (const auto& entry : fs::directory_iterator(input_dir)) {
+            if (max_images != -1 && img_count >= max_images) break;
+
+            if (entry.is_regular_file() &&
+                (entry.path().extension() == ".jpg" || entry.path().extension() == ".png")) {
+
+                std::string input_path = entry.path().string();
+                int width, height, channels;
+                unsigned char* image_data = stbi_load(input_path.c_str(), &width, &height, &channels, 0);
+                if (!image_data) continue;
+
+                std::vector<unsigned char> gray_image = convert_to_grayscale(image_data, width, height, channels);
+                stbi_image_free(image_data);
+
+                std::vector<unsigned char> result_par;
+                double start = omp_get_wtime();
+                Opening_Parallel(gray_image, result_par, width, height, kernel_size);
+                double end = omp_get_wtime();
+                total_par_time += (end - start);
+
+                img_count++;
+            }
+        }
+
+        double speedup = seq_baseline / total_par_time;
+        double efficiency = speedup / num_threads;
+
+        std::cout << "  Parallel time: " << total_par_time * 1000.0 << " ms" << std::endl;
+        std::cout << "  Speedup: " << speedup << "x" << std::endl;
+        std::cout << "  Efficiency: " << efficiency * 100.0 << "%" << std::endl;
+
+        // Write to CSV
+        csv_file << num_threads << ","
+                 << seq_baseline * 1000.0 << ","
+                 << total_par_time * 1000.0 << ","
+                 << speedup << ","
+                 << efficiency << std::endl;
     }
+
+    csv_file.close();
+
+    std::cout << "\n=== Results saved to performance_results.csv ===" << std::endl;
+    std::cout << "You can import this into Excel to create graphs." << std::endl;
 
     return 0;
 }
