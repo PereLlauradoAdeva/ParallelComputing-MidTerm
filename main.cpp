@@ -131,12 +131,13 @@ void run_performance_test(const std::string& input_folder, const std::string& ou
                 double end = omp_get_wtime();
                 total_par_time += (end - start);
 
-                // Save output image (only for first thread test to avoid redundancy)
-                if (num_threads == thread_counts[0]) {
-                    std::string output_path = (output_dir / ("opened_" + filename)).string();
-                    stbi_write_png(output_path.c_str(), width, height, GRAYSCALE_CHANNELS,
-                                  result_par.data(), width * GRAYSCALE_CHANNELS);
-                }
+                // Save output image for each thread count
+                std::string name_without_ext = entry.path().stem().string();
+                std::string extension = entry.path().extension().string();
+                std::string output_filename = name_without_ext + "_" + std::to_string(num_threads) + "threads" + extension;
+                std::string output_path = (output_dir / output_filename).string();
+                stbi_write_png(output_path.c_str(), width, height, GRAYSCALE_CHANNELS,
+                              result_par.data(), width * GRAYSCALE_CHANNELS);
 
                 img_count++;
             }
