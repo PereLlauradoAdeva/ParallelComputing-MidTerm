@@ -38,43 +38,36 @@ std::vector<unsigned char> convert_to_grayscale(unsigned char* data, int width, 
     return grayscale_data;
 }
 
-
-int main(int argc, char* argv[]) {
+void run_performance_test(const std::string& input_folder, const std::string& output_folder,
+                          const std::string& csv_filename, int max_images, int kernel_size) {
 
     const fs::path project_root = "C:\\Users\\Lenovo\\Desktop\\UNIFI\\Parallel\\ProjectMidTermDefinitiu";
-    const fs::path input_dir = project_root / "input_images";
-    const fs::path output_dir = project_root / "output_images";
-
-    const int kernel_size = 21;
-    int max_images = -1;
-
-    if (argc > 1) {
-        max_images = std::stoi(argv[1]);
-    }
+    const fs::path input_dir = project_root / input_folder;
+    const fs::path output_dir = project_root / output_folder;
 
     // Thread counts to test
     std::vector<int> thread_counts = {1, 2, 4, 8, 12, 16};
 
-    // make sure output directory exists
+    // make sure directories exist
     try {
         if (!fs::exists(output_dir)) {
             fs::create_directories(output_dir);
         }
         if (!fs::exists(input_dir)) {
-            std::cerr << "Error: input directory not found" << std::endl;
-            return 1;
+            std::cerr << "Error: input directory not found: " << input_dir << std::endl;
+            return;
         }
     } catch (const fs::filesystem_error& e) {
         std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
+        return;
     }
 
-    std::cout << "\n=== Thread Performance Test ===" << std::endl;
+    std::cout << "\n=== Testing " << input_folder << " ===" << std::endl;
     std::cout << "Kernel: " << kernel_size << "x" << kernel_size << std::endl;
     std::cout << "Images: " << (max_images == -1 ? "all" : std::to_string(max_images)) << std::endl;
 
     // Open CSV file for results
-    std::ofstream csv_file("performance_results.csv");
+    std::ofstream csv_file(csv_filename);
     csv_file << "Threads,Sequential_Time_ms,Parallel_Time_ms,Speedup,Efficiency" << std::endl;
 
     // Get sequential baseline first
@@ -124,6 +117,7 @@ int main(int argc, char* argv[]) {
                 (entry.path().extension() == ".jpg" || entry.path().extension() == ".png")) {
 
                 std::string input_path = entry.path().string();
+                std::string filename = entry.path().filename().string();
                 int width, height, channels;
                 unsigned char* image_data = stbi_load(input_path.c_str(), &width, &height, &channels, 0);
                 if (!image_data) continue;
@@ -136,6 +130,13 @@ int main(int argc, char* argv[]) {
                 Opening_Parallel(gray_image, result_par, width, height, kernel_size);
                 double end = omp_get_wtime();
                 total_par_time += (end - start);
+
+                // Save output image (only for first thread test to avoid redundancy)
+                if (num_threads == thread_counts[0]) {
+                    std::string output_path = (output_dir / ("opened_" + filename)).string();
+                    stbi_write_png(output_path.c_str(), width, height, GRAYSCALE_CHANNELS,
+                                  result_par.data(), width * GRAYSCALE_CHANNELS);
+                }
 
                 img_count++;
             }
@@ -157,9 +158,36 @@ int main(int argc, char* argv[]) {
     }
 
     csv_file.close();
+    std::cout << "\nResults saved to " << csv_filename << std::endl;
+}
 
-    std::cout << "\n=== Results saved to performance_results.csv ===" << std::endl;
-    std::cout << "You can import this into Excel to create graphs." << std::endl;
+
+int main(int argc, char* argv[]) {
+
+    const int kernel_size = 9;
+
+    int max_images1 = -1;
+    int max_images2 = -1;
+
+    if (argc > 1) {
+        max_images1 = std::stoi(argv[1]);
+    }
+    if (argc > 2) {
+        max_images2 = std::stoi(argv[2]);
+    }
+
+    std::cout << "=== Thread Performance Test ===" << std::endl;
+    std::cout << "Test 1: input_images (max: " << (max_images1 == -1 ? "all" : std::to_string(max_images1)) << ")" << std::endl;
+    std::cout << "Test 2: input_images2 (max: " << (max_images2 == -1 ? "all" : std::to_string(max_images2)) << ")" << std::endl;
+
+    // Run test 1
+    run_performance_test("input_images", "output_images", "performance_results_1.csv", max_images1, kernel_size);
+
+    // Run test 2
+    run_performance_test("input_images2", "output_images2", "performance_results_2.csv", max_images2, kernel_size);
+
+    std::cout << "\n=== All tests completed ===" << std::endl;
+    std::cout << "Results saved to performance_results_1.csv and performance_results_2.csv" << std::endl;
 
     return 0;
 }
