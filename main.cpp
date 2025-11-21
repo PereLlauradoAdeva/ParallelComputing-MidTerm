@@ -46,7 +46,7 @@ void run_performance_test(const std::string& input_folder, const std::string& ou
     const fs::path output_dir = project_root / output_folder;
 
     // Thread counts to test
-    std::vector<int> thread_counts = {1, 2, 4, 8, 12, 16};
+    std::vector<int> thread_counts = {1, 2, 4, 8};
 
     // make sure directories exist
     try {
