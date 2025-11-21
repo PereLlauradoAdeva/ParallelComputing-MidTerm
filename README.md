@@ -35,10 +35,12 @@ Example:
 
 - `performance_results_1.csv` - Results for input_images
 - `performance_results_2.csv` - Results for input_images2
-- `output_images/` - Processed images from input_images
-- `output_images2/` - Processed images from input_images2
+- `output_images/` - Processed images from input_images (one per thread count)
+- `output_images2/` - Processed images from input_images2 (one per thread count)
 
 CSV files contain: Threads, Sequential Time, Parallel Time, Speedup, and Efficiency data.
+
+Images are saved with thread count in filename: `imagename_Xthreads.ext` (e.g., `photo_4threads.jpg`)
 
 ## Files
 
