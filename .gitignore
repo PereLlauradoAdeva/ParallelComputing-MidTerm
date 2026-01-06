@@ -9,8 +9,7 @@ input_images2/
 output_images/
 output_images2/
 
-# Resultats de rendiment
-*.csv
+# *.csv
 
 # Executables i objectes
 main.exe
