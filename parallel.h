@@ -17,4 +17,18 @@ void Opening_Parallel(const std::vector<unsigned char>& input,
                       std::vector<unsigned char>& output,
                       const int width, const int height, const int kernel_size);
 
+// --- DYNAMIC SCHEDULING ---
+
+void Dilate_Parallel_Dynamic(const std::vector<unsigned char>& input,
+                             std::vector<unsigned char>& output,
+                             const int width, const int height, const int kernel_size);
+
+void Erode_Parallel_Dynamic(const std::vector<unsigned char>& input,
+                            std::vector<unsigned char>& output,
+                            const int width, const int height, const int kernel_size);
+
+void Opening_Parallel_Dynamic(const std::vector<unsigned char>& input,
+                              std::vector<unsigned char>& output,
+                              const int width, const int height, const int kernel_size);
+
 #endif // PARALLEL_H
