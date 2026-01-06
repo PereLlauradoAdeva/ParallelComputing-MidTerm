@@ -16,7 +16,7 @@ Or run `compile.bat`
 
 ## Usage
 
-The program tests performance with different thread counts (1, 2, 4, 8, 12, 16) on two image sets:
+The program tests performance with different thread counts (1, 2, 4, 8) on two image sets:
 
 ```bash
 ./main.exe [max_images1] [max_images2]
