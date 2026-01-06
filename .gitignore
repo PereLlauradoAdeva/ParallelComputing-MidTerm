@@ -3,8 +3,25 @@ build/
 bin/
 
 # Ignorar directoris de dades i resultats
+# Ignorar directoris de dades i resultats
 input_images/
+input_images2/
 output_images/
+output_images2/
+
+# Resultats de rendiment
+*.csv
+
+# Executables i objectes
+main.exe
+*.o
+*.obj
+
+# Altres
+.claude/
+template/
+.DS_Store
+__MACOSX/
 
 # Ignorar fitxers de configuració de l'IDE (opcional, però recomanat)
 .vscode/
