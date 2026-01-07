@@ -1,4 +1,6 @@
 # Parallel Image Processing Project
+**Author:** Pere Llauradó Adeva
+
 
 This project implements a parallelized version of Morphological Opening (Erosion followed by Dilation) using OpenMP in C++. It compares the performance of **Static** vs **Dynamic** scheduling across different thread counts and datasets.
 
@@ -58,10 +60,13 @@ The project uses two distinct datasets to evaluate performance under different l
 1.  **Dataset 1 (Large Images)**: `input_images`
     *   **Source**: **IDRiD** (Indian Diabetic Retinopathy Image Dataset).
     *   **Content**: High-resolution retinal images.
+    *   **URL**: https://www.kaggle.com/datasets/aaryapatel98/indian-diabetic-retinopathy-image-dataset/code/discussion
     
 2.  **Dataset 2 (Small Images)**: `input_images2`
     *   **Source**: **Satellite Images of Water Bodies**.
     *   **Content**: Smaller patches of satellite imagery.
+    *   **URL**: https://www.kaggle.com/datasets/franciscoescobar/satellite-images-of-water-bodies/discussion?sort=hotness
+    
 
 ## 📄 Output
 *   **Console**: displays execution time, speedup, and efficiency for each run.
