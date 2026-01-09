@@ -3,7 +3,7 @@
 
 #include <vector>
 
-// --- OPERACIONES MORFOLÓGICAS SECUENCIALES ---
+// Sequential morphology operations
 
 void Dilate_Sequential(const std::vector<unsigned char>& input,
                        std::vector<unsigned char>& output,

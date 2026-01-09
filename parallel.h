@@ -3,7 +3,7 @@
 
 #include <vector>
 
-// --- OPERACIONES MORFOLÓGICAS PARALELAS (OpenMP) ---
+// Parallel morphology operations (OpenMP)
 
 void Dilate_Parallel(const std::vector<unsigned char>& input,
                      std::vector<unsigned char>& output,
@@ -17,7 +17,7 @@ void Opening_Parallel(const std::vector<unsigned char>& input,
                       std::vector<unsigned char>& output,
                       const int width, const int height, const int kernel_size);
 
-// --- DYNAMIC SCHEDULING ---
+// Dynamic scheduling
 
 void Dilate_Parallel_Dynamic(const std::vector<unsigned char>& input,
                              std::vector<unsigned char>& output,
