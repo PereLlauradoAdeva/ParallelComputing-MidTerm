@@ -39,12 +39,6 @@ main.exe 10 10  # Process only 10 images from each dataset
 main.exe -1 -1  # Process ALL images (default)
 ```
 
-### Visualization
-After running `main.exe`, result CSV files are generated. Run the Python script to create performance graphs:
-```cmd
-python plot_results.py
-```
-
 ## ⚙️ Parameters & Configuration
 
 | Parameter | Value | Description |
